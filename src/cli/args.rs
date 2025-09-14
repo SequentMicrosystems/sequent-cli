@@ -4,8 +4,8 @@ pub fn channel(no_channels: u8) -> Arg {
     Arg::new("channel")
         .value_name("CHANNEL")
         .required(true)
-        .value_parser(clap::value_parser!(u8).range(0..(no_channels - 1) as i64))
-        .help(format!("Channel number (0-{})", no_channels - 1))
+        .value_parser(clap::value_parser!(u8).range(1..=no_channels as i64))
+        .help(format!("Channel number (1-{})", no_channels))
 }
 
 pub fn state_on_off() -> Arg {

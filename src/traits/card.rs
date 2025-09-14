@@ -1,5 +1,6 @@
 use crate::{Error, Result};
 
+use clap::Command;
 use embedded_hal::i2c::I2c;
 use linux_embedded_hal::I2cdev; // Import the I2c trait for write_read
 
@@ -12,6 +13,7 @@ pub trait CardInfo {
     const VERSION: &'static str;
 
     fn stack_level(&self) -> u8;
+    fn set_stack_level(&mut self, stack_level: u8);
 }
 
 pub trait Card {
@@ -26,7 +28,6 @@ pub trait Card {
 
     fn read_u_n(&self, register: u8, n: u8) -> Result<u32> {
         let bytes = self.read_n_bytes(register, n)?;
-        println!("DEBUG: {bytes:?}");
         let mut val = 0u32;
         for (i, b) in bytes.iter().enumerate() {
             val |= (*b as u32) << (i * 8);
@@ -67,6 +68,10 @@ pub trait Card {
     }
 
     fn write_bit(&self, register: u8, bit: u8, state: bool) -> Result<()>;
+
+    fn info_cmd(&self) -> Command {
+        Command::new("info").about("Show device information")
+    }
 }
 
 impl<T> Card for T

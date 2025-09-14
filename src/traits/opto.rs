@@ -71,8 +71,8 @@ where
             .arg(args::channel(Self::OPTO_CH_NO))
     }
     fn get_opto(&self, channel: u8) -> Result<bool> {
-        let val = self.read_u8(Self::OPTO + channel / 8)?;
-        Ok(val & (1 << channel) != 0)
+        let val = self.read_u8(Self::OPTO + (channel - 1) / 8)?;
+        Ok(val & (1 << (channel - 1)) != 0)
     }
 
     fn get_counter_cmd(&self) -> Command {
@@ -82,7 +82,10 @@ where
             .arg(args::channel(Self::OPTO_CH_NO))
     }
     fn get_counter(&self, channel: u8) -> Result<u32> {
-        let val = self.read_u_n(Self::EDGE_COUNT + channel * Self::COUNTER_SIZE, Self::COUNTER_SIZE)?;
+        let val = self.read_u_n(
+            Self::EDGE_COUNT + (channel - 1) * Self::COUNTER_SIZE,
+            Self::COUNTER_SIZE,
+        )?;
         Ok(val)
     }
 
@@ -92,7 +95,10 @@ where
             .arg(args::channel(Self::OPTO_CH_NO))
     }
     fn get_encoder_count(&self, channel: u8) -> Result<i32> {
-        let val = self.read_i_n(Self::ENCODER_COUNT + channel * Self::COUNTER_SIZE, Self::COUNTER_SIZE)?;
+        let val = self.read_i_n(
+            Self::ENCODER_COUNT + (channel - 1) * Self::COUNTER_SIZE,
+            Self::COUNTER_SIZE,
+        )?;
         Ok(val)
     }
 
@@ -132,8 +138,8 @@ where
             )
     }
     fn cfg_edge(&self, channel: u8, rising: bool, falling: bool) -> Result<()> {
-        let byte = channel / 8;
-        let bit = channel % 8;
+        let byte = (channel - 1) / 8;
+        let bit = (channel - 1) % 8;
         self.write_bit(Self::RISING + byte, bit, rising)?;
         self.write_bit(Self::FALLING + byte, bit, falling)?;
         Ok(())
@@ -150,7 +156,7 @@ where
             )
     }
     fn cfg_encoder(&self, channel: u8, enable: bool) -> Result<()> {
-        self.write_bit(Self::ENCODER_ENABLE + channel / 8, channel % 8, enable)?;
+        self.write_bit(Self::ENCODER_ENABLE + (channel - 1) / 8, (channel - 1) % 8, enable)?;
         Ok(())
     }
 
@@ -209,8 +215,8 @@ where
                 Ok(())
             }
             Some((unimplemented, _)) => unimplemented!("Unimplemented opto command: {}", unimplemented),
-            _ => Err(Error::UnknownCommand {
-                command: "opto".to_string(),
+            None => Err(Error::UnknownCommand {
+                command: "opto: Subcommand required or else help!!".to_string(),
             }),
         }
     }

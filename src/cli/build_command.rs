@@ -4,12 +4,10 @@ use clap::ArgAction;
 use clap::{Arg, ArgMatches, Command};
 
 use crate::cards::MultiIo;
+use crate::traits::CardInfo;
 use crate::traits::{Card, Opto, Relay};
 
 pub trait Capabilities {
-    fn as_card(&self) -> Result<&dyn Card> {
-        Err(Error::UnsupportedCapability { capability: "Card" })
-    }
     fn as_opto(&self) -> Result<&dyn Opto> {
         Err(Error::UnsupportedCapability { capability: "Opto" })
     }
@@ -50,40 +48,39 @@ macro_rules! impl_capabilities {
 
 use clap::builder::BoolishValueParser;
 
-pub fn build_command(dev: &dyn Capabilities) -> Command {
-    let card = dev.as_card().expect("Device must implement Card trait");
-
-    let mut cmd = Command::new(card.program_name())
-        .version(card.version())
-        .about(format!("{} command line interface", card.card_name()))
-        .arg(
-            Arg::new("info")
-                .short('i')
-                .long("info")
-                .help("Show device information")
-                .action(ArgAction::SetTrue),
-        )
+pub fn build_command<T>(dev: &T) -> Command
+where
+    T: Capabilities + Card,
+{
+    let mut cmd = Command::new(dev.program_name())
+        .version(dev.version())
+        .about(format!("{} HAT command line interface", dev.card_name()))
+        .subcommand_required(true)
+        .arg_required_else_help(true)
         .arg(
             Arg::new("stack-level")
+                /*
                 .short('s')
                 .long("stack")
+                */
+                .value_name("STACK_LEVEL")
                 .help("Set the stack level of the target device")
-                .value_parser(clap::value_parser!(u8).range(0..card.max_stack_level() as i64))
+                .value_parser(clap::value_parser!(u8).range(0..=dev.max_stack_level() as i64))
                 .default_value("0")
                 .global(true),
         );
-
     if let Ok(opto) = dev.as_opto() {
         cmd = cmd.subcommand(opto.opto_cmd());
     }
 
     if let Ok(relay) = dev.as_relay() {
+        cmd = cmd.subcommand(relay.relay_cmd());
         // Flat commands
-        cmd = cmd.subcommand(relay.get_relay_cmd()).subcommand(relay.set_relay_cmd());
+        //cmd = cmd.subcommand(relay.get_relay_cmd()).subcommand(relay.set_relay_cmd());
     }
 
     if let Ok(led) = dev.as_led() {
-        cmd = cmd.subcommand(led.get_led_cmd()).subcommand(led.set_led_cmd());
+        cmd = cmd.subcommand(led.led_cmd());
     }
 
     if let Ok(watchdog) = dev.as_watchdog() {
@@ -91,65 +88,46 @@ pub fn build_command(dev: &dyn Capabilities) -> Command {
         cmd = cmd.subcommand(watchdog.watchdog_cmd());
     }
 
+    cmd = cmd.subcommand(dev.info_cmd());
+
     cmd
 }
 
-pub fn run_command(dev: &impl Capabilities, matches: clap::ArgMatches) -> Result<()> {
+pub fn run_command<T>(dev: &mut T, matches: clap::ArgMatches) -> Result<()>
+where
+    T: Capabilities + Card + CardInfo,
+{
     if let Some(stack_level) = matches.get_one::<u8>("stack-level") {
-        println!("STACK LEVEL: {}", stack_level);
+        // TODO: Change this, integrate it better in the answer
+        println!("Stack level: {}", stack_level);
+        dev.set_stack_level(*stack_level)
     }
     match matches.subcommand() {
+        Some(("led", sub_m)) => {
+            let led = dev.as_led()?;
+            led.handle_cmd(sub_m)
+        }
+        Some(("relay", sub_m)) => {
+            let relay = dev.as_relay()?;
+            relay.handle_cmd(sub_m)
+        }
         Some(("opto", sub_m)) => {
             let opto = dev.as_opto()?;
             opto.handle_cmd(sub_m)
-        }
-        Some(("get-relay", sub_m)) => {
-            let relay = dev.as_relay()?;
-            let channel: u8 = *sub_m.get_one::<u8>("channel").unwrap();
-            let state = relay.get_relay(channel)?;
-            println!("Relay channel {} state: {}", channel, state);
-            Ok(())
-        }
-        Some(("set-relay", sub_m)) => {
-            let relay = dev.as_relay()?;
-            let channel: u8 = *sub_m.get_one::<u8>("channel").unwrap();
-            let state: bool = *sub_m.get_one::<bool>("state").unwrap();
-            relay.set_relay(channel, state)?;
-            println!("Relay channel {} set to {}", channel, state);
-            Ok(())
-        }
-        Some(("get-led", sub_m)) => {
-            let led = dev.as_led()?;
-            let channel: u8 = *sub_m.get_one::<u8>("channel").unwrap();
-            let state = led.get_led(channel)?;
-            println!("LED channel {} state: {}", channel, state);
-            Ok(())
-        }
-        Some(("set-led", sub_m)) => {
-            let led = dev.as_led()?;
-            let channel: u8 = *sub_m.get_one::<u8>("channel").unwrap();
-            let state: bool = *sub_m.get_one::<bool>("state").unwrap();
-            led.set_led(channel, state)?;
-            println!("LED channel {} set to {}", channel, state);
-            Ok(())
         }
         Some(("watchdog", sub_m)) => {
             let watchdog = dev.as_watchdog()?;
             watchdog.handle_cmd(sub_m)
         }
-        None => {
-            if matches.get_flag("info") {
-                let card = dev.as_card()?;
-                println!("Program: {}", card.program_name());
-                println!("Version: {}", card.version());
-                println!("Card:    {}", card.card_name());
-                println!("I2C Addr: 0x{:02X}", card.base_addr());
-                // Add more info as needed
-                Ok(())
-            } else {
-                Err(Error::NoCommand())
-            }
+        Some(("info", _)) => {
+            println!("Program: {}", dev.program_name());
+            println!("Version: {}", dev.version());
+            println!("Card:    {}", dev.card_name());
+            println!("I2C Addr: 0x{:02X}", dev.base_addr());
+            // Add more info as needed
+            Ok(())
         }
+        None => Err(Error::NoCommand()),
         Some((unimplemented_command, _)) => {
             panic!("Command '{}' is not implemented for this device", unimplemented_command)
         }

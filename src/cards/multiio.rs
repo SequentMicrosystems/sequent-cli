@@ -1,7 +1,9 @@
 use crate::impl_capabilities;
-use crate::traits::{Card, CardInfo, Led, LedInfo, Opto, OptoInfo, Relay, RelayInfo, Watchdog, WatchdogInfo};
+use crate::traits::{
+    Card, CardInfo, Led, LedInfo, LedModeInfo, Opto, OptoInfo, Relay, RelayInfo, Watchdog, WatchdogInfo,
+};
 
-impl_capabilities!(MultiIo; Card, Opto, Relay, Led, Watchdog);
+impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog);
 pub struct MultiIo {
     stack_level: u8,
 }
@@ -17,12 +19,15 @@ impl MultiIo {
 
 impl CardInfo for MultiIo {
     const BASE_ADDR: u8 = 0x06; // Example base address
-    const CARD_NAME: &'static str = "MultiIo";
+    const CARD_NAME: &'static str = "Multi-IO";
     const PROGRAM_NAME: &'static str = "multiio";
     const VERSION: &'static str = "1.0.0";
 
     fn stack_level(&self) -> u8 {
         self.stack_level
+    }
+    fn set_stack_level(&mut self, stack_level: u8) {
+        self.stack_level = stack_level;
     }
 }
 
@@ -54,6 +59,9 @@ impl LedInfo for MultiIo {
     const LED_CLR: u8 = 0x05;
 
     const LED_CH_NO: u8 = 6;
+}
+impl LedModeInfo for MultiIo {
+    const LED_MODE: u8 = 0x20;
 }
 
 impl WatchdogInfo for MultiIo {
