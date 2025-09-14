@@ -4,15 +4,6 @@ use clap::Command;
 use crate::cli::args;
 use crate::traits::Card;
 
-pub trait LedCapabilities {
-    fn as_led(&self) -> Option<&dyn Led> {
-        None
-    }
-    fn as_led_mode(&self) -> Option<&dyn LedMode> {
-        None
-    }
-}
-
 pub trait LedInfo {
     const LED: u8;
     const LED_SET: u8;
@@ -21,8 +12,9 @@ pub trait LedInfo {
     const LED_CH_NO: u8;
 }
 
-pub trait LedModeInfo {
+pub trait LedModeInfo: LedInfo {
     const LED_MODE: u8;
+    const LED_MODE_CH_NO: u8 = Self::LED_CH_NO;
 }
 
 pub trait Led {
@@ -107,8 +99,6 @@ pub trait LedMode {
     fn set_led_mode(&self, channel: u8, mode: u8) -> Result<()>;
 }
 
-/*
-
 impl<T> LedMode for T
 where
     T: LedModeInfo + Card,
@@ -116,9 +106,8 @@ where
     fn get_led_mode_cmd(&self) -> Command {
         Command::new("get-mode")
             .about("Get LED mode for specified channel")
-            .arg(args::channel(Self::LED_MODE))
+            .arg(args::channel(Self::LED_MODE_CH_NO))
     }
-
     fn get_led_mode(&self, channel: u8) -> Result<u8> {
         let val = self.read_u8(Self::LED_MODE + (channel - 1))?;
         Ok(val)
@@ -127,14 +116,11 @@ where
     fn set_led_mode_cmd(&self) -> Command {
         Command::new("set-mode")
             .about("Set LED mode for specified channel")
-            .arg(args::channel(Self::LED_MODE))
-            .arg(args::mode().help("LED mode (0: Off, 1: On, 2: Heartbeat, 3: Blink)"))
+            .arg(args::channel(Self::LED_MODE_CH_NO))
+            .arg(args::led_blink_modes(2))
     }
-
     fn set_led_mode(&self, channel: u8, mode: u8) -> Result<()> {
         self.write_u8(Self::LED_MODE + (channel - 1), mode)?;
         Ok(())
     }
 }
-
-*/

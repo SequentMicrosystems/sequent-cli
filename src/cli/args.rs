@@ -17,6 +17,18 @@ pub fn state_on_off() -> Arg {
         .value_parser(BoolishValueParser::new())
 }
 
+pub fn led_blink_modes(number_of_modes: u8) -> Arg {
+    if number_of_modes == 2 {
+        return Arg::new("mode")
+            .value_name("MODE")
+            .required(true)
+            .help("LED mode (0=auto, 1=manual)")
+            .value_parser(clap::value_parser!(u8).range(0..=(number_of_modes - 1) as i64));
+    } else {
+        unimplemented!("Only 2 LED modes supported");
+    }
+}
+
 pub fn interval(max_interval: u64) -> Arg {
     Arg::new("interval")
         .value_name("INTERVAL")

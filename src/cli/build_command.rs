@@ -17,6 +17,9 @@ pub trait Capabilities {
     fn as_led(&self) -> Result<&dyn crate::traits::Led> {
         Err(Error::UnsupportedCapability { capability: "Led" })
     }
+    fn as_ledmode(&self) -> Result<&dyn crate::traits::LedMode> {
+        Err(Error::UnsupportedCapability { capability: "LedMode" })
+    }
     fn as_watchdog(&self) -> Result<&dyn crate::traits::Watchdog> {
         Err(Error::UnsupportedCapability { capability: "Watchdog" })
     }
@@ -80,7 +83,12 @@ where
     }
 
     if let Ok(led) = dev.as_led() {
-        cmd = cmd.subcommand(led.led_cmd());
+        let mut led_cmd = led.led_cmd();
+        // Extend led_cmd with similar capabilities
+        if let Ok(led_mode) = dev.as_ledmode() {
+            led_cmd = led_cmd.subcommands([led_mode.get_led_mode_cmd(), led_mode.set_led_mode_cmd()]);
+        }
+        cmd = cmd.subcommand(led_cmd);
     }
 
     if let Ok(watchdog) = dev.as_watchdog() {
