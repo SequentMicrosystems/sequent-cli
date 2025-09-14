@@ -3,6 +3,8 @@ name = "sequent-cli"
 version = "0.1.0"
 edition = "2024"
 default-run = "sequent-cli"
+repository = "https://github.com/sequentmicrosystems/sequent-cli"
+license-file = "LICENSE"
 
 [dependencies]
 clap = "4.5.47"
