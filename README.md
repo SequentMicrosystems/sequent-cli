@@ -47,7 +47,7 @@ curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source $HOME/.cargo/env
 ```
 
-### Building from Source
+### Building and installing from Source
 
 ```bash
 # Clone the repository
@@ -60,6 +60,18 @@ cargo install --path .
 # or build & copy manually
 cargo build --release
 sudo install -Dm755 target/release/sequent-cli /usr/local/bin/sequent-cli
+```
+
+
+### Installing from crates.io
+
+There will be a better way to download the prebuilt binary directly,
+so it is alot faster than compiling
+
+```bash
+# Not working yet
+cargo install cargo-binstall
+cargo binstall sequent-cli # much faster than building from source
 ```
 
 ### Running the CLI for development purposes
