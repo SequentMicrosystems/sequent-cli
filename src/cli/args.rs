@@ -43,6 +43,28 @@ pub fn interval(max_interval: u64) -> Arg {
         .value_parser(clap::value_parser!(u64).range(1..=max_interval))
 }
 
+pub fn resistance(min_value: f32, max_value: f32) -> Arg {
+    Arg::new("resistance")
+        .value_name("RESISTANCE")
+        .required(true)
+        .help("Resistance in Ohms (e.g. 100.0)")
+        .value_parser(FloatRangeParser {
+            min: min_value,
+            max: max_value,
+        })
+}
+
+pub fn value_percentage(min_value: f32, max_value: f32) -> Arg {
+    Arg::new("value")
+        .value_name("VALUE")
+        .required(true)
+        .help(format!("Value in percentage ({}..{}%)", min_value, max_value))
+        .value_parser(FloatRangeParser {
+            min: min_value,
+            max: max_value,
+        })
+}
+
 #[derive(Clone)]
 struct FloatRangeParser {
     min: f32,
@@ -66,15 +88,4 @@ impl TypedValueParser for FloatRangeParser {
             ))
         }
     }
-}
-
-pub fn resistance(min_value: f32, max_value: f32) -> Arg {
-    Arg::new("resistance")
-        .value_name("RESISTANCE")
-        .required(true)
-        .help("Resistance in Ohms (e.g. 100.0)")
-        .value_parser(FloatRangeParser {
-            min: min_value,
-            max: max_value,
-        })
 }

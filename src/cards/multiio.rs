@@ -1,10 +1,10 @@
 use crate::impl_capabilities;
 use crate::traits::{
-    Calib, CalibInfo, Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Opto, OptoInfo, Relay, RelayInfo, Rtd,
-    RtdCalib, RtdCalibInfo, RtdInfo, Watchdog, WatchdogInfo,
+    Calib, CalibInfo, Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Motor, MotorInfo, Opto, OptoInfo, Relay,
+    RelayInfo, Rtd, RtdCalib, RtdCalibInfo, RtdInfo, Servo, ServoInfo, Watchdog, WatchdogInfo,
 };
 
-impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog, Calib, Rtd, RtdCalib);
+impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog, Calib, Rtd, RtdCalib, Motor, Servo);
 pub struct MultiIo {
     stack_level: u8,
 }
@@ -84,14 +84,33 @@ impl RtdInfo for MultiIo {
 }
 
 impl RtdCalibInfo for MultiIo {
+    // TODO: Fix this address
     const RTD_CALIB: u8 = 30;
 }
 
 impl CalibInfo for MultiIo {
+    // TODO: Fix this addresses
     const CALIB_VALUE: u8 = 20;
     const CALIB_CHANNEL: u8 = 24;
     const CALIB_STATUS: u8 = 28;
 
     const CALIBRATION_KEY: u8 = 0xA5;
     const RESET_CALIBRATION_KEY: u8 = 0x5A;
+}
+
+impl MotorInfo for MultiIo {
+    // TODO: Fix this address
+    const MOTOR: u8 = 80;
+
+    const MOTOR_CH_NO: u8 = 1;
+    const MOTOR_SIZE: u8 = 2;
+}
+
+impl ServoInfo for MultiIo {
+    // TODO: Fix this address
+    const SERVO: u8 = 90;
+
+    const SERVO_CH_NO: u8 = 2;
+    const SERVO_SIZE: u8 = 2;
+    const SERVO_SCALE: f32 = 10.0;
 }

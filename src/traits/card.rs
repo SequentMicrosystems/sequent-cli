@@ -80,6 +80,22 @@ pub trait Card {
         self.write_bytes(register, &bytes)
     }
 
+    /*
+    //Consider this version instead
+    fn write_u_n_(&self, register: u8, n: u8, value: u32) -> Result<()> {
+        self.write_bytes(register, &value.to_le_bytes()[0..n as usize])
+    }
+    */
+
+    fn write_i_n(&self, register: u8, n: u8, value: i32) -> Result<()> {
+        let uvalue = if value < 0 {
+            (1u32 << (n * 8)) + (value as u32)
+        } else {
+            value as u32
+        };
+        self.write_u_n(register, n, uvalue)
+    }
+
     // fn write_i_n
     // fn write_f_n
 

@@ -32,6 +32,12 @@ pub trait Capabilities {
     fn as_calib(&self) -> Result<&dyn crate::traits::Calib> {
         Err(Error::UnsupportedCapability { capability: "Calib" })
     }
+    fn as_motor(&self) -> Result<&dyn crate::traits::Motor> {
+        Err(Error::UnsupportedCapability { capability: "Motor" })
+    }
+    fn as_servo(&self) -> Result<&dyn crate::traits::Servo> {
+        Err(Error::UnsupportedCapability { capability: "Servo" })
+    }
 }
 
 /*
@@ -116,6 +122,14 @@ where
         cmd = cmd.subcommand(calib.calib_status_cmd());
     }
 
+    if let Ok(motor) = dev.as_motor() {
+        cmd = cmd.subcommand(motor.motor_cmd());
+    }
+
+    if let Ok(servo) = dev.as_servo() {
+        cmd = cmd.subcommand(servo.servo_cmd());
+    }
+
     cmd = cmd.subcommand(dev.info_cmd());
 
     cmd
@@ -134,6 +148,7 @@ where
         Some(("led", sub_m)) => {
             let led = dev.as_led()?;
             led.handle_cmd(sub_m)
+            // TODO: Nest with ledmode
         }
         Some(("relay", sub_m)) => {
             let relay = dev.as_relay()?;
@@ -150,6 +165,16 @@ where
         Some(("rtd", sub_m)) => {
             let rtd = dev.as_rtd()?;
             rtd.handle_cmd(sub_m)
+            // TODO: Nest with rtd calib
+        }
+        // TODO: Add "calib"
+        Some(("motor", sub_m)) => {
+            let motor = dev.as_motor()?;
+            motor.handle_cmd(sub_m)
+        }
+        Some(("servo", sub_m)) => {
+            let servo = dev.as_servo()?;
+            servo.handle_cmd(sub_m)
         }
         Some(("info", _)) => {
             println!("Program: {}", dev.program_name());
