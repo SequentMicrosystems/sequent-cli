@@ -1,4 +1,10 @@
 use clap::{Arg, Command, builder::BoolishValueParser};
+use clap::{
+    builder::TypedValueParser,
+    error::{Error, ErrorKind},
+};
+
+use std::ffi::OsStr;
 
 pub fn channel(no_channels: u8) -> Arg {
     Arg::new("channel")
@@ -35,4 +41,40 @@ pub fn interval(max_interval: u64) -> Arg {
         .required(true)
         .help(format!("Interval in seconds (1-{})", max_interval))
         .value_parser(clap::value_parser!(u64).range(1..=max_interval))
+}
+
+#[derive(Clone)]
+struct FloatRangeParser {
+    min: f32,
+    max: f32,
+}
+
+impl TypedValueParser for FloatRangeParser {
+    type Value = f32;
+
+    fn parse_ref(&self, _cmd: &Command, _arg: Option<&clap::Arg>, value: &OsStr) -> Result<f32, Error> {
+        let s = value.to_str().ok_or_else(|| clap::error::Error::new(ErrorKind::InvalidUtf8))?;
+        let v: f32 = s
+            .parse()
+            .map_err(|_| Error::raw(ErrorKind::InvalidValue, format!("not a number: {s}")))?;
+        if v.is_finite() && v >= self.min && v <= self.max {
+            Ok(v)
+        } else {
+            Err(Error::raw(
+                ErrorKind::ValueValidation,
+                format!("must be between {} and {}", self.min, self.max),
+            ))
+        }
+    }
+}
+
+pub fn resistance(min_value: f32, max_value: f32) -> Arg {
+    Arg::new("resistance")
+        .value_name("RESISTANCE")
+        .required(true)
+        .help("Resistance in Ohms (e.g. 100.0)")
+        .value_parser(FloatRangeParser {
+            min: min_value,
+            max: max_value,
+        })
 }

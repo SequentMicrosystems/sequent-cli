@@ -1,9 +1,10 @@
 use crate::impl_capabilities;
 use crate::traits::{
-    Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Opto, OptoInfo, Relay, RelayInfo, Watchdog, WatchdogInfo,
+    Calib, CalibInfo, Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Opto, OptoInfo, Relay, RelayInfo, Rtd,
+    RtdCalib, RtdCalibInfo, RtdInfo, Watchdog, WatchdogInfo,
 };
 
-impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog);
+impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog, Calib, Rtd, RtdCalib);
 pub struct MultiIo {
     stack_level: u8,
 }
@@ -71,4 +72,26 @@ impl WatchdogInfo for MultiIo {
     const CLEAR_RESET_COUNT: u8 = 109;
     const POWER_OFF_INTERVAL_SET: u8 = 110;
     const POWER_OFF_INTERVAL_GET: u8 = 114;
+}
+
+impl RtdInfo for MultiIo {
+    const RTD_TEMP: u8 = 30;
+    const RTD_RES: u8 = 38;
+
+    const RTD_CH_NO: u8 = 2;
+    const RTD_TEMP_SIZE: u8 = 4;
+    const RTD_RES_SIZE: u8 = 4;
+}
+
+impl RtdCalibInfo for MultiIo {
+    const RTD_CALIB: u8 = 30;
+}
+
+impl CalibInfo for MultiIo {
+    const CALIB_VALUE: u8 = 20;
+    const CALIB_CHANNEL: u8 = 24;
+    const CALIB_STATUS: u8 = 28;
+
+    const CALIBRATION_KEY: u8 = 0xA5;
+    const RESET_CALIBRATION_KEY: u8 = 0x5A;
 }

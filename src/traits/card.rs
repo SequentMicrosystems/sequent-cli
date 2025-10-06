@@ -24,6 +24,8 @@ pub trait Card {
     fn program_name(&self) -> &'static str;
     fn version(&self) -> &'static str;
 
+    fn read_u8(&self, register: u8) -> Result<u8>;
+
     fn read_n_bytes(&self, register: u8, n: u8) -> Result<Vec<u8>>;
 
     fn read_u_n(&self, register: u8, n: u8) -> Result<u32> {
@@ -63,11 +65,7 @@ pub trait Card {
         Ok(f)
     }
 
-    fn read_u8(&self, register: u8) -> Result<u8>;
-    //fn read_u16(&self, register: u8) -> Result<u16>;
-    fn read_float(&self, register: u8) -> Result<f32>;
-
-    fn write_bytes(&self, register: u8, value: &[u8]) -> Result<()>;
+    fn write_bit(&self, register: u8, bit: u8, state: bool) -> Result<()>;
 
     fn write_u8(&self, register: u8, value: u8) -> Result<()> {
         let mut i2c = I2cdev::new("/dev/i2c-1")?;
@@ -75,12 +73,15 @@ pub trait Card {
         Ok(())
     }
 
+    fn write_bytes(&self, register: u8, value: &[u8]) -> Result<()>;
+
     fn write_u_n(&self, register: u8, n: u8, value: u32) -> Result<()> {
         let bytes: Vec<u8> = (0..n).map(|i| ((value >> (i * 8)) & 0xff) as u8).collect();
         self.write_bytes(register, &bytes)
     }
 
-    fn write_bit(&self, register: u8, bit: u8, state: bool) -> Result<()>;
+    // fn write_i_n
+    // fn write_f_n
 
     fn info_cmd(&self) -> Command {
         Command::new("info").about("Show device information")
@@ -110,6 +111,12 @@ where
     fn version(&self) -> &'static str {
         Self::VERSION
     }
+    fn read_u8(&self, register: u8) -> Result<u8> {
+        let mut i2c = I2cdev::new("/dev/i2c-1")?;
+        let mut b = [0u8; 1];
+        i2c.write_read(self.addr() as u16, &[register], &mut b)?;
+        Ok(b[0])
+    }
     fn read_n_bytes(&self, register: u8, n: u8) -> Result<Vec<u8>> {
         let mut i2c = I2cdev::new("/dev/i2c-1")?;
         let mut b = vec![0u8; n.into()];
@@ -133,19 +140,6 @@ where
         Ok((b[1] as u16) << 8 | (b[0] as u16))
     }
     */
-    fn read_u8(&self, register: u8) -> Result<u8> {
-        let mut i2c = I2cdev::new("/dev/i2c-1")?;
-        let mut b = [0u8; 1];
-        i2c.write_read(self.addr() as u16, &[register], &mut b)?;
-        Ok(b[0])
-    }
-    fn write_bytes(&self, register: u8, value: &[u8]) -> Result<()> {
-        let mut i2c = I2cdev::new("/dev/i2c-1")?;
-        let mut data = vec![register];
-        data.extend_from_slice(value);
-        i2c.write(self.addr() as u16, &data)?;
-        Ok(())
-    }
 
     fn write_bit(&self, register: u8, bit: u8, state: bool) -> Result<()> {
         if bit > 7 {
@@ -161,6 +155,13 @@ where
             val &= !(1 << bit);
         }
         self.write_u8(register, val)?;
+        Ok(())
+    }
+    fn write_bytes(&self, register: u8, value: &[u8]) -> Result<()> {
+        let mut i2c = I2cdev::new("/dev/i2c-1")?;
+        let mut data = vec![register];
+        data.extend_from_slice(value);
+        i2c.write(self.addr() as u16, &data)?;
         Ok(())
     }
 }

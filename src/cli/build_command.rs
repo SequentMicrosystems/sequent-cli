@@ -23,6 +23,15 @@ pub trait Capabilities {
     fn as_watchdog(&self) -> Result<&dyn crate::traits::Watchdog> {
         Err(Error::UnsupportedCapability { capability: "Watchdog" })
     }
+    fn as_rtd(&self) -> Result<&dyn crate::traits::Rtd> {
+        Err(Error::UnsupportedCapability { capability: "Rtd" })
+    }
+    fn as_rtdcalib(&self) -> Result<&dyn crate::traits::RtdCalib> {
+        Err(Error::UnsupportedCapability { capability: "RtdCalib" })
+    }
+    fn as_calib(&self) -> Result<&dyn crate::traits::Calib> {
+        Err(Error::UnsupportedCapability { capability: "Calib" })
+    }
 }
 
 /*
@@ -91,9 +100,20 @@ where
         cmd = cmd.subcommand(led_cmd);
     }
 
+    if let Ok(rtd) = dev.as_rtd() {
+        let mut rtd_cmd = rtd.rtd_cmd();
+        if let Ok(rtd_calib) = dev.as_rtdcalib() {
+            rtd_cmd = rtd_cmd.subcommands([rtd_calib.calib_rtd_cmd(), rtd_calib.reset_calib_rtd_cmd()]);
+        }
+        cmd = cmd.subcommand(rtd_cmd);
+    }
+
     if let Ok(watchdog) = dev.as_watchdog() {
-        // Nested commands
         cmd = cmd.subcommand(watchdog.watchdog_cmd());
+    }
+
+    if let Ok(calib) = dev.as_calib() {
+        cmd = cmd.subcommand(calib.calib_status_cmd());
     }
 
     cmd = cmd.subcommand(dev.info_cmd());
@@ -126,6 +146,10 @@ where
         Some(("watchdog", sub_m)) => {
             let watchdog = dev.as_watchdog()?;
             watchdog.handle_cmd(sub_m)
+        }
+        Some(("rtd", sub_m)) => {
+            let rtd = dev.as_rtd()?;
+            rtd.handle_cmd(sub_m)
         }
         Some(("info", _)) => {
             println!("Program: {}", dev.program_name());
