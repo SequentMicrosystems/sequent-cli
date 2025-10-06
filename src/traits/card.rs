@@ -45,9 +45,22 @@ pub trait Card {
         }
     }
 
-    fn read_f_n(&self, register: u8, n: u8) -> Result<f32> {
-        // TODO: IMPLEMENT ME
-        Ok(0.)
+    fn read_f_n(&self, register: u8, n: u8) -> Result<f64> {
+        let bytes = self.read_n_bytes(register, n)?;
+        let mut val: u64 = 0;
+
+        // build integer representation from little-endian bytes
+        for (i, b) in bytes.iter().enumerate() {
+            val |= (*b as u64) << (i * 8);
+        }
+
+        // interpret based on size
+        let f = match n {
+            4 => f32::from_le_bytes(val.to_le_bytes()[..4].try_into().unwrap()) as f64,
+            8 => f64::from_le_bytes(val.to_le_bytes()),
+            _ => panic!("unsupported float size: {}", n),
+        };
+        Ok(f)
     }
 
     fn read_u8(&self, register: u8) -> Result<u8>;
@@ -103,6 +116,7 @@ where
         i2c.write_read(self.addr() as u16, &[register], &mut b)?;
         Ok(b)
     }
+    /*
     fn read_float(&self, register: u8) -> Result<f32> {
         let mut i2c = I2cdev::new("/dev/i2c-1")?;
         let mut b = [0u8; 4];
@@ -110,6 +124,7 @@ where
         let val = f32::from_le_bytes(b);
         Ok(val)
     }
+    */
     /*
     fn read_u16(&self, register: u8) -> Result<u16> {
         let mut i2c = I2cdev::new("/dev/i2c-1")?;
