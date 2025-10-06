@@ -65,6 +65,17 @@ pub fn value_percentage(min_value: f32, max_value: f32) -> Arg {
         })
 }
 
+pub fn value_range_with_unit(min_value: f32, max_value: f32, unit: &str) -> Arg {
+    Arg::new("value")
+        .value_name("VALUE")
+        .required(true)
+        .help(format!("Value in range ({}..{}) {}", min_value, max_value, unit))
+        .value_parser(FloatRangeParser {
+            min: min_value,
+            max: max_value,
+        })
+}
+
 #[derive(Clone)]
 struct FloatRangeParser {
     min: f32,

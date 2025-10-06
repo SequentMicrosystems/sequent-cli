@@ -1,10 +1,13 @@
+use std::process::Output;
+
 use crate::impl_capabilities;
 use crate::traits::{
-    Calib, CalibInfo, Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Motor, MotorInfo, Opto, OptoInfo, Relay,
-    RelayInfo, Rtd, RtdCalib, RtdCalibInfo, RtdInfo, Servo, ServoInfo, Watchdog, WatchdogInfo,
+    Calib, CalibInfo, Card, CardInfo, Led, LedInfo, LedMode, LedModeInfo, Motor, MotorInfo, Opto, OptoInfo, OutputInfo,
+    OutputV0_10, Relay, RelayInfo, Rtd, RtdCalib, RtdCalibInfo, RtdInfo, Servo, ServoInfo, V0_10, Watchdog,
+    WatchdogInfo,
 };
 
-impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog, Calib, Rtd, RtdCalib, Motor, Servo);
+impl_capabilities!(MultiIo; Opto, Relay, Led, Watchdog, Calib, Rtd, RtdCalib, Motor, Servo, OutputV0_10);
 pub struct MultiIo {
     stack_level: u8,
 }
@@ -114,3 +117,12 @@ impl ServoInfo for MultiIo {
     const SERVO_SIZE: u8 = 2;
     const SERVO_SCALE: f32 = 10.0;
 }
+
+impl OutputInfo<V0_10> for MultiIo {
+    const CMD_NAME: &'static str = "uout";
+    const VALUE_ADDR: u8 = 0x10;
+    const VALUE_SIZE: u8 = 2;
+    const VALUE_SCALE: f32 = 100.0;
+    const CH_NO: u8 = 2;
+}
+impl OutputV0_10 for MultiIo {}

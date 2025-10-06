@@ -1,3 +1,4 @@
+mod analog;
 mod calib;
 mod card;
 mod led;
@@ -8,6 +9,7 @@ mod rtd;
 mod servo;
 mod watchdog;
 
+pub use analog::{Output, OutputInfo, OutputV0_10, V0_10};
 pub use calib::{Calib, CalibInfo};
 pub use card::{Card, CardInfo};
 pub use led::{Led, LedInfo, LedMode, LedModeInfo};

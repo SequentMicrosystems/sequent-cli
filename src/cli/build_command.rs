@@ -38,6 +38,11 @@ pub trait Capabilities {
     fn as_servo(&self) -> Result<&dyn crate::traits::Servo> {
         Err(Error::UnsupportedCapability { capability: "Servo" })
     }
+    fn as_outputv0_10(&self) -> Result<&dyn crate::traits::OutputV0_10> {
+        Err(Error::UnsupportedCapability {
+            capability: "OutputV0_10",
+        })
+    }
 }
 
 /*
@@ -130,6 +135,10 @@ where
         cmd = cmd.subcommand(servo.servo_cmd());
     }
 
+    if let Ok(outputv0_10) = dev.as_outputv0_10() {
+        cmd = cmd.subcommand(outputv0_10.output_cmd());
+    }
+
     cmd = cmd.subcommand(dev.info_cmd());
 
     cmd
@@ -175,6 +184,11 @@ where
         Some(("servo", sub_m)) => {
             let servo = dev.as_servo()?;
             servo.handle_cmd(sub_m)
+        }
+        // TODO: Make a list where all the subcommands are added, so you don't hardcode this "uout" in here
+        Some(("uout", sub_m)) => {
+            let outputv0_10 = dev.as_outputv0_10()?;
+            outputv0_10.handle_cmd(sub_m)
         }
         Some(("info", _)) => {
             println!("Program: {}", dev.program_name());
